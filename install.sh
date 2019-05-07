@@ -93,7 +93,7 @@ sed -i $'s/)\s*updatePiholeFunc/) unsupportedFunc/g' /usr/local/bin/pihole
 touch /.piholeFirstBoot
 
 curl -o /tmp/cloudflared.tgz https://bin.equinox.io/c/VdrWdbjqyF/cloudflared-stable-linux-arm.tgz
-tar -xvzf cloudflared-stable-linux-arm.tgz -C /etc/pihole/cloudflared
-chmod 777 tar -xvzf cloudflared-stable-linux-arm.tgz -C ./argo-tunnel
+tar -xvzf /tmp/cloudflared-stable-linux-arm.tgz -C /etc/pihole/cloudflared
+chmod 777 /etc/pihole/cloudflared
 
 echo 'Docker install successful'
