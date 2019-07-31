@@ -106,7 +106,6 @@ touch /.piholeFirstBoot
 curl -o /tmp/cloudflared.tgz https://bin.equinox.io/c/VdrWdbjqyF/cloudflared-stable-linux-amd64.tgz
 tar -C /etc/pihole/ -xvzf /tmp/cloudflared.tgz
 rm /tmp/cloudflared.tgz
-cd $OLDPWD #/var/www/html/admin or /
-chmod 4777 /etc/pihole/cloudflared
+chmod 777 /etc/pihole/cloudflared
 
 echo 'Docker install successful'
