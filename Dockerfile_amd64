@@ -14,6 +14,7 @@ ADD s6/debian-root /
 COPY s6/service /usr/local/bin/service
 
 ADD /cloudflared /
+RUN chmod 777 /clouflared
 
 # php config start passes special ENVs into
 ENV PHP_ENV_CONFIG '/etc/lighttpd/conf-enabled/15-fastcgi-php.conf'
