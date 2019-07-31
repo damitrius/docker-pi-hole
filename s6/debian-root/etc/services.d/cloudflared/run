@@ -1,4 +1,4 @@
 #!/usr/bin/with-contenv bash
 
 s6-echo "Starting cloudflared"
-cloudflared --version
+/cloudflared --version
