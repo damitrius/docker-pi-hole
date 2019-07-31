@@ -13,6 +13,8 @@ ENTRYPOINT [ "/s6-init" ]
 ADD s6/debian-root /
 COPY s6/service /usr/local/bin/service
 
+ADD /cloudflared /
+
 # php config start passes special ENVs into
 ENV PHP_ENV_CONFIG '/etc/lighttpd/conf-enabled/15-fastcgi-php.conf'
 ENV PHP_ERROR_LOG '/var/log/lighttpd/error.log'
