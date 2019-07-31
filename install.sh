@@ -4,27 +4,26 @@ mkdir -p /etc/pihole/
 mkdir -p /var/run/pihole
 # Production tags with valid web footers
 export CORE_VERSION="$(cat /etc/docker-pi-hole-version)"
-# Major.Minor for web tag until patches are released for it
-export WEB_VERSION="$(echo ${CORE_VERSION} | grep -Po "v\d+\.\d+")"
+export WEB_VERSION="v4.3"
+
 # Only use for pre-production / testing
-export USE_CUSTOM_BRANCHES=false
+export CHECKOUT_BRANCHES=false
+# Search for release/* branch naming convention for custom checkouts
+if [[ "$CORE_VERSION" == *"release/"* ]] ; then
+    CHECKOUT_BRANCHES=true
+fi
 
 apt-get update
-apt-get install -y curl procps
+apt-get install --no-install-recommends -y curl procps ca-certificates
 curl -L -s $S6OVERLAY_RELEASE | tar xvzf - -C /
 mv /init /s6-init
-
-if [[ $USE_CUSTOM_BRANCHES == true ]] ; then
-    CORE_VERSION="hotfix/${CORE_VERSION}"
-    WEB_VERSION="release/v4.2"
-fi
 
 # debconf-apt-progress seems to hang so get rid of it too
 which debconf-apt-progress
 mv "$(which debconf-apt-progress)" /bin/no_debconf-apt-progress
 
 # Get the install functions
-curl https://raw.githubusercontent.com/pi-hole/pi-hole/${CORE_VERSION}/automated%20install/basic-install.sh > "$PIHOLE_INSTALL" 
+curl https://raw.githubusercontent.com/pi-hole/pi-hole/${CORE_VERSION}/automated%20install/basic-install.sh > "$PIHOLE_INSTALL"
 PH_TEST=true . "${PIHOLE_INSTALL}"
 
 # Preseed variables to assist with using --unattended install
@@ -59,8 +58,8 @@ apt-get install -y --force-yes netcat-openbsd
 piholeGitUrl="${piholeGitUrl}"
 webInterfaceGitUrl="${webInterfaceGitUrl}"
 webInterfaceDir="${webInterfaceDir}"
-git clone "${piholeGitUrl}" "${PI_HOLE_LOCAL_REPO}"
-git clone "${webInterfaceGitUrl}" "${webInterfaceDir}"
+git clone --branch "${CORE_VERSION}" --depth 1 "${piholeGitUrl}" "${PI_HOLE_LOCAL_REPO}"
+git clone --branch "${WEB_VERSION}" --depth 1 "${webInterfaceGitUrl}" "${webInterfaceDir}"
 
 tmpLog="/tmp/pihole-install.log"
 installLogLoc="${installLogLoc}"
@@ -68,7 +67,19 @@ FTLdetect 2>&1 | tee "${tmpLog}"
 installPihole 2>&1 | tee "${tmpLog}"
 mv "${tmpLog}" /
 
-if [[ $USE_CUSTOM_BRANCHES == true ]] ; then
+fetch_release_metadata() {
+    local directory="$1"
+    local version="$2"
+    pushd "$directory"
+    git fetch -t
+    git remote set-branches origin '*'
+    git fetch --depth 10
+    git checkout master
+    git reset --hard "$version"
+    popd
+}
+
+if [[ $CHECKOUT_BRANCHES == true ]] ; then
     ln -s /bin/true /usr/local/bin/service
     ln -s /bin/true /usr/local/bin/update-rc.d
     echo y | bash -x pihole checkout core ${CORE_VERSION}
@@ -79,8 +90,8 @@ if [[ $USE_CUSTOM_BRANCHES == true ]] ; then
     unlink /usr/local/bin/update-rc.d
 else
     # Reset to our tags so version numbers get detected correctly
-    pushd "${PI_HOLE_LOCAL_REPO}"; git reset --hard "${CORE_VERSION}"; popd;
-    pushd "${webInterfaceDir}"; git reset --hard "${WEB_VERSION}"; popd;
+    fetch_release_metadata "${PI_HOLE_LOCAL_REPO}" "${CORE_VERSION}"
+    fetch_release_metadata "${webInterfaceDir}" "${WEB_VERSION}"
 fi
 
 sed -i 's/readonly //g' /opt/pihole/webpage.sh
